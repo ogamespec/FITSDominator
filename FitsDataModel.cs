@@ -22,7 +22,7 @@ namespace FITSDominator
 {
     class FitsDataModel
     {
-        const int BlockSize = 2880;     // p16. FITS files shall be interpreted as a sequence of 1 or more 2880-byte FITS blocks
+        const long BlockSize = 2880;     // p16. FITS files shall be interpreted as a sequence of 1 or more 2880-byte FITS blocks
 
         public List<FitsEntry> entries = new List<FitsEntry>();
 
@@ -31,7 +31,7 @@ namespace FITSDominator
             if (data.Length < BlockSize)
                 return;
 
-            int offset = 0;
+            long offset = 0;
 
             while (offset < data.Length)
             {
@@ -42,7 +42,7 @@ namespace FITSDominator
             }
         }
 
-        private void ParseEntry (byte [] data, int offset, FitsEntry entry)
+        private void ParseEntry (byte [] data, long offset, FitsEntry entry)
         {
             // Very first entry is Primary, other are distinguished by XTENSION keyword.
 
@@ -59,7 +59,7 @@ namespace FITSDominator
             {
                 char[] paramRaw = new char[80];
 
-                for (int i=0; i<paramRaw.Length; i++)
+                for (long i =0; i<paramRaw.Length; i++)
                 {
                     paramRaw[i] = (char)data[offset + i];
                 }
@@ -101,7 +101,7 @@ namespace FITSDominator
 
             // If entry type is unknown - skip until next XTENSION keyword (or end of file)
 
-            int dataSize = 0;
+            long dataSize = 0;
 
             if (entry.type == FitsEntryType.Unknown)
             {
@@ -133,15 +133,15 @@ namespace FITSDominator
                 if (!entry.ParamExists("NAXIS"))
                     throw new Exception("Missing NAXIS keyword!");
 
-                int elementSize = entry.GetParam<int>("BITPIX") / 8;
-                int naxis = entry.GetParam<int>("NAXIS");
-                int numElements = naxis != 0 ? 1 : 0;
-                for (int i = 0; i < naxis; i++)
+                long elementSize = entry.GetParam<long>("BITPIX") / 8;
+                long naxis = entry.GetParam<long>("NAXIS");
+                long numElements = naxis != 0 ? 1 : 0;
+                for (var i = 0; i < naxis; i++)
                 {
                     string paramName = "NAXIS" + (i + 1).ToString();
                     if (!entry.ParamExists(paramName))
                         throw new Exception("Missing " + paramName + " keyword!");
-                    numElements *= entry.GetParam<int>(paramName);
+                    numElements *= entry.GetParam<long>(paramName);
                 }
                 dataSize = numElements * elementSize;
             }
@@ -156,15 +156,15 @@ namespace FITSDominator
 
             entry.data = new byte[dataSize];
 
-            for (int i=0; i<dataSize; i++)
+            for (long i=0; i<dataSize; i++)
             {
                 entry.data[i] = data[offset + i];
             }
         }
 
-        private int NextBlock(int offset)
+        private long NextBlock(long offset)
         {
-            int blockNum = offset / BlockSize;
+            long blockNum = offset / BlockSize;
             return (blockNum + 1) * BlockSize;
         }
 
@@ -224,8 +224,8 @@ namespace FITSDominator
     {
         public FitsEntryType type = FitsEntryType.Unknown;
         public List<FitsParam> header = new List<FitsParam>();
-        public int entryOffsetBytes = 0;
-        public int headerSizeBytes = 0;
+        public long entryOffsetBytes = 0;
+        public long headerSizeBytes = 0;
         public byte[] data = null;
 
         public T GetParam<T>(string name)
@@ -342,9 +342,9 @@ namespace FITSDominator
             return str.Trim('\'');
         }
 
-        private int ParseInt (string str)
+        private long ParseInt (string str)
         {
-            return int.Parse(str);
+            return long.Parse(str);
         }
 
         private double ParseDouble(string str)
@@ -352,12 +352,12 @@ namespace FITSDominator
             return double.Parse(str, CultureInfo.InvariantCulture);
         }
 
-        private Tuple<int,int> ParseComplexInt(string str)
+        private Tuple<long,long> ParseComplexInt(string str)
         {
             string[] parts = str.Split(',');
             parts[0] = parts[0].Replace('(', ' ');
             parts[1] = parts[1].Replace(')', ' ');
-            return new Tuple<int, int>(int.Parse(parts[0]), int.Parse(parts[1]));
+            return new Tuple<long, long>(long.Parse(parts[0]), long.Parse(parts[1]));
         }
 
         private Tuple<double, double> ParseComplexDouble(string str)
